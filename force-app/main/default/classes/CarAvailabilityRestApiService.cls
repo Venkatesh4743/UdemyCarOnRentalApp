@@ -31,6 +31,7 @@ global with sharing class CarAvailabilityRestApiService {
         Set<id> bookedCarId  = new Set<id>();
         Datetime startDateTime = Datetime.newInstance(startDate, Time.newInstance(0, 0, 0, 0));
         Datetime endDateTime = Datetime.newInstance(endDate, Time.newInstance(23, 59, 59, 0));
+        
         //get booking records for the same date range
         for(Booking__c booking :[select id,car__c from Booking__c where start_date_time__c >= :startDateTime and end_date_time__c <= :endDateTime]){
             bookedCarId.add(booking.car__c);

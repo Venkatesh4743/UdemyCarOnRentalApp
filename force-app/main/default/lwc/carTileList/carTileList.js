@@ -71,7 +71,7 @@ export default class CarTileList extends LightningElement {
     publish(this.messageContext, carSelection, payload);
    }
 
-  handleEstimateBooking(event) {
+    handleEstimateBooking(event) {
     console.log("handleEstimateBooking");
     EstimateCarBooking.open({
       carId: event.detail,

@@ -3,8 +3,11 @@ public with sharing class ReviewTriggerHandlerService {
     public static void shareLowRatingAndCreateCase(List<Review__c> reviews){
         
         //get the customer support group
-        Group customerSupportGroup = [select id from group where DeveloperName = :Constants.CUSTOMER_SUPPORT_PUBLIC_GROUP];
-        Set<Id> bookingIdSet = new Set<Id>();
+        Group customerSupportGroup = [select id 
+                                      from group 
+                                      where DeveloperName = :Constants.CUSTOMER_SUPPORT_PUBLIC_GROUP];
+        
+         Set<Id> bookingIdSet = new Set<Id>();
 
         //get the booking from review
         for(Review__c reviewRec : reviews){
@@ -14,9 +17,11 @@ public with sharing class ReviewTriggerHandlerService {
         }
 
         //checking if booking is already share with customer support public group
-        List<Booking__share> existingShare = [select parentId from Booking__share 
-        where parentId in :bookingIdSet and userOrGroupId = :customerSupportGroup.Id 
-        and RowCause = :Schema.Booking__share.RowCause.Manual];
+        List<Booking__share> existingShare = [select parentId 
+                                              from Booking__share 
+                                              where parentId in :bookingIdSet 
+                                              and userOrGroupId = :customerSupportGroup.Id 
+                                              and RowCause = :Schema.Booking__share.RowCause.Manual];
 
         Set<Id> alreadySharedBookingId = new Set<Id>();
         
@@ -26,6 +31,7 @@ public with sharing class ReviewTriggerHandlerService {
         List<Booking__share> bookingShareList = new List<Booking__share>();
         for(Id bookingId : bookingIdSet){
             if(!alreadySharedBookingId.contains(bookingId)){
+              
                 Booking__share shareWithCustomerSupport = new Booking__share();
                 shareWithCustomerSupport.ParentId = bookingId;
                 shareWithCustomerSupport.UserOrGroupId = customerSupportGroup.Id;
@@ -64,12 +70,16 @@ public with sharing class ReviewTriggerHandlerService {
         }
 
         //get the review records
-        List<Review__c> reviewList = [select id,Rating__c,Comments__c, Booking__c, Customer__c, Booking__r.Car__c from Review__c where Id in :reviewIdSet];
-        System.debug('reviewList' + reviewList);
+        List<Review__c> reviewList = [select id,Rating__c,Comments__c, Booking__c, Customer__c, Booking__r.Car__c 
+                                      from Review__c 
+                                      where Id in :reviewIdSet];
+                                      System.debug('reviewList' + reviewList);
+
         //Avoid duplicate case creation. 
         List<Case> existingCaseList = [
-            select id,Review_ID__c from Case where 
-            recordTypeId = :reviewIssueRecordTypeId 
+            select id,Review_ID__c 
+            from Case 
+            where recordTypeId = :reviewIssueRecordTypeId 
             and Type = :Constants.NEGATIVE_REVIEW_CASE_TYPE
             and Review_ID__c in :reviewIdSet
         ];
@@ -124,7 +134,9 @@ public with sharing class ReviewTriggerHandlerService {
         }
 
         //get all the booking records. 
-        Map<Id,Booking__c> bookings = new Map<Id,Booking__c>([select id, Car__c from Booking__c where id in :bookingIdSet]);
+        Map<Id,Booking__c> bookings = new Map<Id,Booking__c>([select id, Car__c 
+                                                              from Booking__c 
+                                                              where id in :bookingIdSet]);
 
         //map review to cars through the booking
         for(Review__c review : listOfReviews){

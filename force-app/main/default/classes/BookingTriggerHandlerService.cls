@@ -1,6 +1,7 @@
 public with sharing class BookingTriggerHandlerService {
     
     public static void updateTotalBookingValueForCar(List<Booking__c> bookings, Map<Id,Booking__c> oldBookingMap){
+       
         Set<Id> carIds = new Set<Id>();
         for(Booking__c booking : bookings){
             //check if booking status is changed to closed. 
