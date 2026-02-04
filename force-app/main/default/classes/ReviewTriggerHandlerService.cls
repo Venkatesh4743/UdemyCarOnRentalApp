@@ -2,7 +2,9 @@ public with sharing class ReviewTriggerHandlerService {
     
     public static void shareLowRatingAndCreateCase(List<Review__c> reviews){
         
-        //get the customer support group
+         //get the customer support group
+        // 1. Fetching the Support Group ID using SOQL
+       // Kannada: Support group ID na fetch madtheevi
         Group customerSupportGroup = [select id 
                                       from group 
                                       where DeveloperName = :Constants.CUSTOMER_SUPPORT_PUBLIC_GROUP];
@@ -10,13 +12,17 @@ public with sharing class ReviewTriggerHandlerService {
          Set<Id> bookingIdSet = new Set<Id>();
 
         //get the booking from review
+        // 2. Collecting Booking IDs from the reviews
+        // Kannada: Reviews inda Booking IDs na collect madi Set nalli hakoltheevi
         for(Review__c reviewRec : reviews){
             if(String.isNotBlank(reviewRec.Booking__c)){
                 bookingIdSet.add(reviewRec.Booking__c);
             }
         }
 
-        //checking if booking is already share with customer support public group
+          //checking if booking is already share with customer support public group
+          // 3. Querying existing shares to avoid duplicates
+          // Kannada: Eegagle share agideya antha database check madtheevi (Duplicate avoid madoke)
         List<Booking__share> existingShare = [select parentId 
                                               from Booking__share 
                                               where parentId in :bookingIdSet 
@@ -30,6 +36,8 @@ public with sharing class ReviewTriggerHandlerService {
         }
         List<Booking__share> bookingShareList = new List<Booking__share>();
         for(Id bookingId : bookingIdSet){
+         // 4. Create new share record only if it doesn't exist
+        // Kannada: Share agilladiddre mathra Record create madi 'Read' access kodtheevi
             if(!alreadySharedBookingId.contains(bookingId)){
               
                 Booking__share shareWithCustomerSupport = new Booking__share();
@@ -40,7 +48,8 @@ public with sharing class ReviewTriggerHandlerService {
                 bookingShareList.add(shareWithCustomerSupport);
             }
         }
-
+        // 5. Bulk DML with Error Logging
+        // Kannada: List empty illadiddre Bulk Insert madi, errors na Log framework alli capture madtheevi
         if(!bookingShareList.isEmpty()){
             try {
                 insert bookingShareList;
@@ -57,7 +66,9 @@ public with sharing class ReviewTriggerHandlerService {
 
     private static void createCaseForLowRating (List<Review__c> reviews){
         
-        //Get the record type id for negative review record type
+        // Get the record type id for negative review record type
+        // 1. Fetching Case Record Type ID dynamically
+        // Kannada: 'Negative Review' record type ID na fetch madtheevi (No hardcoding)
         Id reviewIssueRecordTypeId = Schema.SObjectType.Case.getRecordTypeInfosByDeveloperName()
         .get(Constants.NEGATIVE_REVIEW_RECORD_TYPE).getRecordTypeId();
         
@@ -69,13 +80,17 @@ public with sharing class ReviewTriggerHandlerService {
             reviewIdSet.add(reviewRec.Id);
         }
 
-        //get the review records
+        // get the review records
+        // 2. THE RE-QUERY: To get parent relationship fields like Car__c
+        // Kannada: Trigger.new nalli parent fields baralla, adikke SOQL query madtheevi
         List<Review__c> reviewList = [select id,Rating__c,Comments__c, Booking__c, Customer__c, Booking__r.Car__c 
                                       from Review__c 
                                       where Id in :reviewIdSet];
                                       System.debug('reviewList' + reviewList);
 
-        //Avoid duplicate case creation. 
+        // Avoid duplicate case creation. 
+        // 3. Avoiding Duplicate Cases
+        // Kannada: Ee review ge eegagle Case idiya antha check madtheevi
         List<Case> existingCaseList = [
             select id,Review_ID__c 
             from Case 
@@ -92,7 +107,9 @@ public with sharing class ReviewTriggerHandlerService {
         List<Case> caseList = new List<Case>();
 
         for(Review__c reviewRec : reviewList){
-
+        
+        // 4. Create Case only if it doesn't already exist
+        // Kannada: Case illadiddre mathra Review data na Case fields ge map madtheevi
             if(!existingReviewId.contains(reviewRec.Id)){
                 Case caseRecord = new Case();
                 caseRecord.recordTypeId = reviewIssueRecordTypeId;
@@ -107,6 +124,7 @@ public with sharing class ReviewTriggerHandlerService {
                 caseList.add(caseRecord);
             }
         }
+         // 5. Final Bulk Insert
         if(!caseList.isEmpty()){
             try {
                 insert caseList;
